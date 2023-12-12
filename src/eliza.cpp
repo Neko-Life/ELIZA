@@ -40,6 +40,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <sstream>
 #include <chrono>
@@ -5789,12 +5790,52 @@ bool parse_cmdline(
     return true;
 }
 
+namespace musicat::eliza {
+    elizascript::script s;
+    elizalogic::string_tracer tracer;
+    std::shared_ptr<elizalogic::eliza> eliza_ptr = nullptr;
+    std::mutex m;
+    bool initialized = false;
+
+    int init() {
+        std::lock_guard lk(m);
+        if (initialized) return 1;
+        initialized = true;
+
+        std::stringstream ss(elizascript::CACM_1966_01_DOCTOR_script);
+        elizascript::read<std::stringstream>(ss, s);
+
+        eliza_ptr = std::make_shared<elizalogic::eliza>(s.rules, s.mem_rule);
+        eliza_ptr->set_tracer(&tracer);
+
+        return 0;
+    }
+
+    std::string ask(const std::string& userinput) {
+        std::lock_guard lk(m);
+        if (!eliza_ptr || userinput.empty()) return "";
+
+        std::string resp = eliza_ptr->response(userinput);
+
+        if (!resp.empty()) {
+            for (char &c : resp) {
+                c = std::tolower(c);
+            }
+        }
+
+        return resp;
+    }
+
+    std::string trace() {
+        return tracer.text();
+    }
+}
 
 
 
 
 //#include "unpublished_script_tests.cpp"
-
+/*
 int main(int argc, const char * argv[])
 {
     try {
@@ -6043,7 +6084,7 @@ int main(int argc, const char * argv[])
         return EXIT_FAILURE;
     }
 }
-
+*/
 // I've tried to make this respond to user input exactly as the original
 // would have in 1966. I've also tried to communicate how ELIZA works and
 // to make it usable.
