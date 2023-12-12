@@ -5815,6 +5815,10 @@ namespace musicat::eliza {
         std::lock_guard lk(m);
         if (!eliza_ptr || userinput.empty()) return "";
 
+        // just let the event handler transform the string to lowercase
+        return eliza_ptr->response(userinput);
+
+        /*
         std::string resp = eliza_ptr->response(userinput);
 
         if (!resp.empty()) {
@@ -5824,6 +5828,7 @@ namespace musicat::eliza {
         }
 
         return resp;
+        */
     }
 
     std::string trace() {
