@@ -7306,7 +7306,41 @@ bool parse_cmdline(
 
 
 
+namespace musicat::eliza
+{
 
+elizascript::script s;
+std::unique_ptr<elizalogic::eliza> eliza_ptr = nullptr;
+std::mutex m;
+bool initialized = false;
+
+int init() {
+    std::lock_guard lk(m);
+    if (initialized) return 1;
+    initialized = true;
+
+    std::stringstream ss(elizascript::CACM_1966_01_DOCTOR_script);
+    elizascript::read<std::stringstream>(ss, s);
+
+    eliza_ptr = std::make_unique<elizalogic::eliza>(s.rules, s.mem_rule);
+
+    return 0;
+}
+
+std::string ask(const std::string& userinput) {
+    if (userinput.empty()) return "";
+
+    std::lock_guard lk(m);
+    if (!eliza_ptr) return "";
+    return eliza_ptr->response(userinput);
+}
+
+} // musicat::eliza
+
+
+
+
+/*
 int main(int argc, const char * argv[])
 {
     try {
@@ -7601,7 +7635,7 @@ int main(int argc, const char * argv[])
         return EXIT_FAILURE;
     }
 }
-
+*/
 // I've tried to make this respond to user input exactly as the original
 // would have in 1966. I've also tried to communicate how ELIZA works and
 // to make it usable.
